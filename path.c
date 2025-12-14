@@ -2,33 +2,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <windows.h>
 
 #define MAX_NODES 100
 #define INF INT_MAX
 
-// Struct for Node (location)
+// Struct untuk node (lokasi)
 struct Node {
     char name[50];
 };
 
-// Struct for Edge (route)
+// Struct untuk edge (rute)
 struct Edge {
-    int dest;       // Destination node index
-    int weight;     // Distance or time
+    int dest;       // Indeks node tujuan
+    int weight;     // Jarak atau waktu
     struct Edge* next;
 };
 
-// Global variables for graph
+// Variabel global
 struct Node nodes[MAX_NODES];
-struct Edge* adjList[MAX_NODES];  // Adjacency list: array of linked lists
-int nodeCount = 0;  // Current number of nodes
+struct Edge* adjList[MAX_NODES];  // Adjacency list: array dari linked list
+int nodeCount = 0;  // Jumlah node saat ini
 
-// Dijkstra's algorithm arrays
+// Array untuk algoritma Dijkstra
 int distance[MAX_NODES];
 int visited[MAX_NODES];
 int predecessor[MAX_NODES];
 
-// Function prototypes
+// Deklarasi fungsi
 int login();
 void menu();
 void addNode();
@@ -43,56 +44,84 @@ int findNodeIndex(char* name);
 void freeAdjList();
 
 int main() {
-    // Initialize adjacency list to NULL
+    // Inisialisasi adjacency list menjadi NULL
     for (int i = 0; i < MAX_NODES; i++) {
         adjList[i] = NULL;
     }
 
     if (login()) {
         menu();
-    } else {
-        printf("Login failed. Exiting...\n");
     }
 
-    // Free memory before exit
+    // Membebaskan memori sebelum program selesai
     freeAdjList();
     return 0;
 }
 
-// Simple login function with hardcoded credentials
+// Fungsi login sederhana
 int login() {
     char username[50], password[50];
-    printf("Admin Login\n");
-    printf("Username: ");
-    scanf("%s", username);
-    printf("Password: ");
-    scanf("%s", password);
+    int attempts = 3;
 
-    if (strcmp(username, "zahwadzakira") == 0 && strcmp(password, "satuduatiga") == 0) {
-        printf("Login successful!\n");
-        return 1;
-    } else {
-        printf("Invalid credentials.\n");
-        return 0;
+    while (attempts > 0) {
+        printf("\n====================================\n");
+        printf("        SISTEM TRANSPORTASI KOTA\n");
+        printf("====================================\n");
+
+        printf("Username : ");
+        scanf("%49s", username);
+
+        printf("Password : ");
+        scanf("%49s", password);
+
+        if (strcmp(username, "admin123") == 0 &&
+            strcmp(password, "admin123") == 0) {
+
+            printf("\n====================================\n");
+            printf("        LOGIN BERHASIL\n");
+            printf("====================================\n");
+            return 1;
+        } else {
+            attempts--;
+            printf("\n[!] Username atau password salah\n");
+            printf("[!] Kamu memiliki %d kesempatan lagi\n", attempts);
+        }
     }
+
+    printf("\n====================================\n");
+    printf("  LOGIN GAGAL 3 KALI\n");
+
+    printf("  Keluar.");
+    Sleep(500);
+    printf("\n  Keluar..");
+    Sleep(500);
+    printf("\n  Keluar...");
+    Sleep(500);
+
+    exit(0);
 }
 
-// Main menu function
+
+// Fungsi menu utama
 void menu() {
     int choice;
     do {
-        printf("\n--- Admin Menu ---\n");
+        printf("\n====================================\n");
+        printf("           MENU UTAMA\n");
+        printf("====================================\n");
         printf("1. Tambah Lokasi\n");
         printf("2. Edit Lokasi\n");
         printf("3. Hapus Lokasi\n");
         printf("4. Tambah Rute\n");
         printf("5. Edit Rute\n");
         printf("6. Hapus Rute\n");
-        printf("7. Display Graph\n");
+        printf("7. Tampilkan Graph\n");
         printf("8. Rute Terpendek\n");
         printf("9. Logout / Exit\n");
+        printf("------------------------------------\n");
         printf("Masukkan Pilihan: ");
         scanf("%d", &choice);
+
 
         switch (choice) {
             case 1: addNode(); break;
@@ -123,7 +152,7 @@ void menu() {
     } while (choice != 9);
 }
 
-// Add a new node (location)
+// Fungsi untuk menambahkan node
 void addNode() {
     if (nodeCount >= MAX_NODES) {
         printf("Lokasi sudah limit.\n");
@@ -137,12 +166,12 @@ void addNode() {
         return;
     }
     strcpy(nodes[nodeCount].name, name);
-    adjList[nodeCount] = NULL;  // Initialize adjacency list
+    adjList[nodeCount] = NULL;  // Inisialisasi adjacency list
     nodeCount++;
     printf("Node berhasil ditambahkan.\n");
 }
 
-// Edit node name
+// Fungsi untuk mengedit nama node
 void editNode() {
     char oldName[50], newName[50];
     printf("Masukkan nama lokasi saat ini: ");
@@ -162,7 +191,7 @@ void editNode() {
     printf("Node edited successfully.\n");
 }
 
-// Delete a node and all its edges
+// Fungsi untuk menghapus node beserta semua rutenya
 void deleteNode() {
     char name[50];
     printf("Enter location name to delete: ");
@@ -172,7 +201,7 @@ void deleteNode() {
         printf("Node not found.\n");
         return;
     }
-    // Free edges from this node
+    // Membebaskan semua edge dari node ini
     struct Edge* temp = adjList[idx];
     while (temp) {
         struct Edge* next = temp->next;
@@ -180,21 +209,20 @@ void deleteNode() {
         temp = next;
     }
     adjList[idx] = NULL;
-    // Shift nodes
+    // Menggeser node
     for (int i = idx; i < nodeCount - 1; i++) {
         nodes[i] = nodes[i + 1];
         adjList[i] = adjList[i + 1];
     }
     nodeCount--;
-    // Update all edges pointing to nodes after idx
+    // Memperbarui edge yang mengarah ke node setelah indeks yang dihapus
     for (int i = 0; i < nodeCount; i++) {
         struct Edge* curr = adjList[i];
         while (curr) {
             if (curr->dest > idx) {
                 curr->dest--;
             } else if (curr->dest == idx) {
-                // This shouldn't happen as we deleted the node, but just in case
-                curr->dest = -1;  // Mark invalid
+                curr->dest = -1;  // Menandai edge tidak valid
             }
             curr = curr->next;
         }
@@ -202,7 +230,7 @@ void deleteNode() {
     printf("Node deleted successfully.\n");
 }
 
-// Add an edge between two nodes
+// Fungsi untuk menambahkan edge antar node
 void addEdge() {
     char src[50], dest[50];
     int weight;
@@ -210,7 +238,7 @@ void addEdge() {
     scanf("%s", src);
     printf("Enter destination location: ");
     scanf("%s", dest);
-    printf("Enter weight (distance/time): ");
+    printf("Enter distance: ");
     scanf("%d", &weight);
     int srcIdx = findNodeIndex(src);
     int destIdx = findNodeIndex(dest);
@@ -218,7 +246,7 @@ void addEdge() {
         printf("Invalid locations.\n");
         return;
     }
-    // Check if edge already exists
+    // Mengecek apakah edge sudah ada
     struct Edge* curr = adjList[srcIdx];
     while (curr) {
         if (curr->dest == destIdx) {
@@ -227,7 +255,7 @@ void addEdge() {
         }
         curr = curr->next;
     }
-    // Add edge
+    // Menambahkan edge baru
     struct Edge* newEdge = (struct Edge*)malloc(sizeof(struct Edge));
     newEdge->dest = destIdx;
     newEdge->weight = weight;
@@ -236,7 +264,7 @@ void addEdge() {
     printf("Edge added successfully.\n");
 }
 
-// Edit edge weight
+// Fungsi untuk mengedit bobot edge
 void editEdge() {
     char src[50], dest[50];
     int newWeight;
@@ -264,7 +292,7 @@ void editEdge() {
     printf("Edge not found.\n");
 }
 
-// Delete an edge
+// Fungsi untuk menghapus edge
 void deleteEdge() {
     char src[50], dest[50];
     printf("Enter source location: ");
@@ -296,7 +324,7 @@ void deleteEdge() {
     printf("Edge not found.\n");
 }
 
-// Display all nodes and their edges
+// Fungsi untuk menampilkan seluruh node dan rutenya
 void displayGraph() {
     if (nodeCount == 0) {
         printf("Graph is empty.\n");
@@ -318,13 +346,13 @@ void displayGraph() {
     }
 }
 
-// Dijkstra's algorithm to find shortest path
+// Algoritma Dijkstra untuk mencari jalur terpendek
 void dijkstra(int start, int end) {
     if (nodeCount == 0) {
         printf("Graph is empty.\n");
         return;
     }
-    // Initialize
+    // Inisialisasi data
     for (int i = 0; i < nodeCount; i++) {
         distance[i] = INF;
         visited[i] = 0;
@@ -333,7 +361,7 @@ void dijkstra(int start, int end) {
     distance[start] = 0;
 
     for (int count = 0; count < nodeCount - 1; count++) {
-        // Find min distance vertex
+        // Mencari node dengan jarak minimum
         int minDist = INF, u = -1;
         for (int v = 0; v < nodeCount; v++) {
             if (!visited[v] && distance[v] < minDist) {
@@ -344,7 +372,7 @@ void dijkstra(int start, int end) {
         if (u == -1) break;
         visited[u] = 1;
 
-        // Update neighbors
+        // Memperbarui jarak ke tetangga
         struct Edge* curr = adjList[u];
         while (curr) {
             int v = curr->dest;
@@ -356,13 +384,13 @@ void dijkstra(int start, int end) {
         }
     }
 
-    // Output
+    // Menampilkan hasil
     if (distance[end] == INF) {
         printf("No route found from %s to %s.\n", nodes[start].name, nodes[end].name);
     } else {
         printf("Shortest path from %s to %s:\n", nodes[start].name, nodes[end].name);
         printf("Total distance: %d\n", distance[end]);
-        // Reconstruct path
+        // Menyusun kembali jalur terpendek
         int path[MAX_NODES], pathLen = 0;
         for (int at = end; at != -1; at = predecessor[at]) {
             path[pathLen++] = at;
@@ -376,7 +404,7 @@ void dijkstra(int start, int end) {
     }
 }
 
-// Helper function to find node index by name
+// Fungsi pembantu untuk mencari indeks node berdasarkan nama
 int findNodeIndex(char* name) {
     for (int i = 0; i < nodeCount; i++) {
         if (strcmp(nodes[i].name, name) == 0) {
@@ -386,7 +414,7 @@ int findNodeIndex(char* name) {
     return -1;
 }
 
-// Free all adjacency list memory
+// Fungsi untuk membebaskan seluruh memori adjacency list
 void freeAdjList() {
     for (int i = 0; i < nodeCount; i++) {
         struct Edge* curr = adjList[i];
@@ -397,4 +425,3 @@ void freeAdjList() {
         }
     }
 }
-
